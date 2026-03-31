@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>جيبلي — العريش</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #FF6B2B;
+    --primary-dark: #e85a1a;
+    --secondary: #1A1A2E;
+    --accent: #FFD700;
+    --bg: #F7F4EF;
+    --card: #FFFFFF;
+    --text: #1A1A2E;
+    --text-muted: #8A8A9A;
+    --green: #2ECC71;
+    --border: #EBEBEB;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== SCREENS ===== */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: block; }
+
+  /* ===== HOME SCREEN ===== */
+  #home {
+    background: var(--bg);
+    padding-bottom: 100px;
+  }
+
+  .hero-bar {
+    background: var(--secondary);
+    padding: 20px 20px 28px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bar::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    background: var(--primary);
+    border-radius: 50%;
+    opacity: 0.15;
+  }
+
+  .hero-bar::after {
+    content: '';
+    position: absolute;
+    bottom: -50px; left: 30px;
+    width: 100px; height: 100px;
+    background: var(--accent);
+    border-radius: 50%;
+    opacity: 0.1;
+  }
+
+  .location-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .location-row .pin { font-size: 16px; }
+  .location-row span { color: #aaa; font-size: 13px; }
+  .location-row strong { color: white; font-size: 14px; }
+
+  .hero-greeting {
+    color: white;
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1.3;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-greeting span { color: var(--primary); }
+
+  .search-box {
+    background: white;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .search-box input {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: transparent;
+    text-align: right;
+  }
+
+  .search-box input::placeholder { color: var(--text-muted); }
+  .search-icon { color: var(--text-muted); font-size: 18px; }
+
+  /* Categories */
+  .section-title {
+    font-size: 17px;
+    font-weight: 800;
+    padding: 20px 20px 12px;
+    color: var(--text);
+  }
+
+  .categories {
+    display: flex;
+    gap: 10px;
+    padding: 0 20px 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .categories::-webkit-scrollbar { display: none; }
+
+  .cat-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    min-width: 70px;
+  }
+
+  .cat-pill:active { transform: scale(0.95); }
+
+  .cat-icon-wrap {
+    width: 60px; height: 60px;
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+  }
+
+  .cat-pill.active .cat-icon-wrap {
+    border-color: var(--primary);
+    transform: scale(1.05);
+  }
+
+  .cat-pill span {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .cat-pill.active span { color: var(--primary); }
+
+  /* Store Cards */
+  .stores-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 4px 20px;
+  }
+
+  .store-card {
+    background: var(--card);
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .store-card:active { transform: scale(0.98); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .store-banner {
+    height: 130px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+  }
+
+  .store-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: white;
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .store-badge.open { color: var(--green); }
+  .store-badge.closed { color: #e74c3c; }
+
+  .store-info {
+    padding: 14px;
+  }
+
+  .store-name {
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+
+  .store-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .store-meta span { display: flex; align-items: center; gap: 4px; }
+  .store-tag {
+    display: inline-block;
+    background: #FFF0E8;
+    color: var(--primary);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-top: 8px;
+  }
+
+  /* ===== STORE SCREEN ===== */
+  #store { background: var(--bg); padding-bottom: 120px; }
+
+  .store-header {
+    position: relative;
+  }
+
+  .store-cover {
+    height: 200px;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .back-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 38px; height: 38px;
+    background: white;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 10;
+  }
+
+  .store-header-info {
+    background: white;
+    padding: 16px 20px 20px;
+    border-radius: 0 0 24px 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+
+  .store-header-info h2 { font-size: 20px; font-weight: 900; margin-bottom: 6px; }
+
+  .store-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .store-stats span { display: flex; align-items: center; gap: 4px; }
+
+  /* Menu Items */
+  .menu-section { padding: 20px 20px 0; }
+  .menu-section-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .menu-items { display: flex; flex-direction: column; gap: 12px; }
+
+  .menu-item {
+    background: white;
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  }
+
+  .item-img {
+    width: 80px; height: 80px;
+    border-radius: 12px;
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+    font-size: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #FFF0E8;
+  }
+
+  .item-details { flex: 1; }
+  .item-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .item-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; line-height: 1.5; }
+  .item-price { font-size: 16px; font-weight: 900; color: var(--primary); }
+
+  .add-btn {
+    width: 34px; height: 34px;
+    background: var(--primary);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .add-btn:active { transform: scale(0.9); background: var(--primary-dark); }
+
+  .add-btn.added { background: var(--green); }
+
+  /* ===== CART BAR ===== */
+  .cart-bar {
+    position: fixed;
+    bottom: 80px;
+    left: 16px; right: 16px;
+    background: var(--secondary);
+    border-radius: 18px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    cursor: pointer;
+    transition: all 0.3s;
+    z-index: 100;
+    transform: translateY(20px);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .cart-bar.visible {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .cart-bar-left { display: flex; align-items: center; gap: 10px; }
+  .cart-count {
+    background: var(--primary);
+    color: white;
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .cart-bar span { color: white; font-size: 14px; font-weight: 700; }
+  .cart-bar-total { color: var(--accent); font-size: 16px; font-weight: 900; }
+
+  /* ===== CART SCREEN ===== */
+  #cart-screen { background: var(--bg); padding-bottom: 120px; }
+
+  .cart-header {
+    background: white;
+    padding: 20px 20px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  .cart-header h2 { font-size: 18px; font-weight: 900; }
+
+  .cart-items { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+
+  .cart-item {
+    background: white;
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  }
+
+  .cart-item-emoji {
+    width: 52px; height: 52px;
+    background: #FFF0E8;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+  }
+
+  .cart-item-info { flex: 1; }
+  .cart-item-info h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .cart-item-info p { font-size: 13px; color: var(--primary); font-weight: 800; }
+
+  .qty-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .qty-btn {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background: white;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .qty-btn.plus { background: var(--primary); color: white; border-color: var(--primary); }
+
+  .cart-summary {
+    margin: 0 20px;
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    margin-bottom: 10px;
+    color: var(--text-muted);
+  }
+
+  .summary-row.total {
+    font-size: 17px;
+    font-weight: 900;
+    color: var(--text);
+    border-top: 2px solid var(--border);
+    padding-top: 12px;
+    margin-top: 4px;
+  }
+
+  .order-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px; right: 20px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 18px;
+    padding: 18px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(255,107,43,0.4);
+    transition: all 0.2s;
+    z-index: 100;
+  }
+
+  .order-btn:active { transform: scale(0.98); background: var(--primary-dark); }
+
+  /* ===== SUCCESS SCREEN ===== */
+  #success {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 30px;
+    text-align: center;
+    background: var(--bg);
+  }
+
+  .success-icon {
+    width: 100px; height: 100px;
+    background: linear-gradient(135deg, var(--green), #27ae60);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 50px;
+    margin-bottom: 28px;
+    animation: bounceIn 0.6s ease;
+    box-shadow: 0 12px 30px rgba(46,204,113,0.35);
+  }
+
+  @keyframes bounceIn {
+    0% { transform: scale(0); }
+    70% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+
+  #success h2 { font-size: 26px; font-weight: 900; margin-bottom: 10px; }
+  #success p { color: var(--text-muted); font-size: 15px; line-height: 1.7; margin-bottom: 32px; }
+
+  .track-box {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    width: 100%;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+  }
+
+  .track-step {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 0;
+  }
+
+  .track-step:not(:last-child) {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .step-dot {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .step-dot.done { background: #E8F8F0; }
+  .step-dot.active { background: #FFF0E8; animation: pulse 1.5s infinite; }
+  .step-dot.pending { background: #F5F5F5; }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  .step-text h4 { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .step-text p { font-size: 12px; color: var(--text-muted); }
+
+  .home-again-btn {
+    width: 100%;
+    background: var(--secondary);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    padding: 16px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* ===== BOTTOM NAV ===== */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    display: flex;
+    border-top: 1px solid var(--border);
+    z-index: 200;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+  }
+
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .nav-icon { font-size: 22px; margin-bottom: 3px; }
+  .nav-label { font-size: 10px; font-weight: 700; color: var(--text-muted); }
+  .nav-item.active .nav-label { color: var(--primary); }
+
+  .nav-dot {
+    width: 5px; height: 5px;
+    background: var(--primary);
+    border-radius: 50%;
+    margin-top: 4px;
+  }
+
+  /* ===== OFFER BANNER ===== */
+  .offer-banner {
+    margin: 16px 20px;
+    background: linear-gradient(135deg, var(--primary), #FF9A5C);
+    border-radius: 18px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .offer-banner::after {
+    content: '🛵';
+    position: absolute;
+    left: 16px;
+    bottom: -4px;
+    font-size: 40px;
+    opacity: 0.25;
+  }
+
+  .offer-text h4 { color: white; font-size: 15px; font-weight: 800; margin-bottom: 3px; }
+  .offer-text p { color: rgba(255,255,255,0.85); font-size: 12px; }
+  .offer-emoji { font-size: 36px; }
+</style>
+</head>
+<body>
+
+<!-- HOME SCREEN -->
+<div id="home" class="screen active">
+  <div class="hero-bar">
+    <div class="location-row">
+      <span class="pin">📍</span>
+      <span>موقعك الحالي</span>
+      <strong>العريش، سيناء</strong>
+    </div>
+    <div class="hero-greeting">
+      أوردر من أي محل<br><span>وجيبلي يجيبهولك 🛵</span>
+    </div>
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="ابحث عن محل أو أكل..." />
+    </div>
+  </div>
+
+  <div class="offer-banner">
+    <div class="offer-text">
+      <h4>توصيل مجاني اليوم!</h4>
+      <p>على أول طلب من المطاعم</p>
+    </div>
+    <span class="offer-emoji">🎉</span>
+  </div>
+
+  <p class="section-title">الأقسام</p>
+  <div class="categories">
+    <div class="cat-pill active" onclick="filterCat('all', this)">
+      <div class="cat-icon-wrap" style="background:#FFF0E8;">🏪</div>
+      <span>الكل</span>
+    </div>
+    <div class="cat-pill" onclick="filterCat('restaurant', this)">
+      <div class="cat-icon-wrap" style="background:#FFF0E8;">🍔</div>
+      <span>مطاعم</span>
+    </div>
+    <div class="cat-pill" onclick="filterCat('market', this)">
+      <div class="cat-icon-wrap" style="background:#E8F8F0;">🛒</div>
+      <span>ماركت</span>
+    </div>
+    <div class="cat-pill" onclick="filterCat('pharmacy', this)">
+      <div class="cat-icon-wrap" style="background:#E8F0FF;">💊</div>
+      <span>صيدلية</span>
+    </div>
+    <div class="cat-pill" onclick="filterCat('juice', this)">
+      <div class="cat-icon-wrap" style="background:#FFF8E8;">🥤</div>
+      <span>عصائر</span>
+    </div>
+  </div>
+
+  <p class="section-title">المحلات المتاحة</p>
+  <div class="stores-grid" id="stores-grid"></div>
+</div>
+
+<!-- STORE SCREEN -->
+<div id="store" class="screen">
+  <div class="store-header">
+    <div class="store-cover" id="store-cover"></div>
+    <div class="back-btn" onclick="showHome()">→</div>
+    <div class="store-header-info">
+      <h2 id="store-name"></h2>
+      <div class="store-stats">
+        <span>⭐ <span id="store-rating"></span></span>
+        <span>🕐 <span id="store-time"></span> دقيقة</span>
+        <span>💰 توصيل <span id="store-delivery"></span> جنيه</span>
+      </div>
+    </div>
+  </div>
+  <div id="menu-container"></div>
+</div>
+
+<!-- CART SCREEN -->
+<div id="cart-screen" class="screen">
+  <div class="cart-header">
+    <div class="back-btn" style="position:relative;top:auto;right:auto;" onclick="showHome()">→</div>
+    <h2>🛒 سلة الطلبات</h2>
+  </div>
+  <div class="cart-items" id="cart-items-list"></div>
+  <div class="cart-summary" id="cart-summary"></div>
+  <button class="order-btn" onclick="placeOrder()">📱 اطلب على واتساب ← جيبلي</button>
+</div>
+
+<!-- SUCCESS SCREEN -->
+<div id="success" class="screen">
+  <div class="success-icon">✓</div>
+  <h2>طلبك اتبعت! 🎉</h2>
+  <p>تم إرسال طلبك على واتساب جيبلي.<br>الديليفري هيوصلك في أقرب وقت.</p>
+  <div class="track-box">
+    <div class="track-step">
+      <div class="step-dot done">✓</div>
+      <div class="step-text">
+        <h4>الطلب استُلم</h4>
+        <p>وصل لفريق جيبلي</p>
+      </div>
+    </div>
+    <div class="track-step">
+      <div class="step-dot active">🍳</div>
+      <div class="step-text">
+        <h4>بيتجهز دلوقتي</h4>
+        <p>المحل شايل الطلب</p>
+      </div>
+    </div>
+    <div class="track-step">
+      <div class="step-dot pending">🛵</div>
+      <div class="step-text">
+        <h4>في الطريق إليك</h4>
+        <p>قريباً...</p>
+      </div>
+    </div>
+  </div>
+  <button class="home-again-btn" onclick="resetApp()">← رجوع للرئيسية</button>
+</div>
+
+<!-- CART FLOATING BAR -->
+<div class="cart-bar" id="cart-bar" onclick="showCart()">
+  <div class="cart-bar-left">
+    <div class="cart-count" id="cart-count">0</div>
+    <span>عرض الطلب</span>
+  </div>
+  <span class="cart-bar-total" id="cart-bar-total">0 جنيه</span>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav" id="bottom-nav">
+  <div class="nav-item active" onclick="showHome()">
+    <span class="nav-icon">🏠</span>
+    <span class="nav-label">الرئيسية</span>
+    <div class="nav-dot"></div>
+  </div>
+  <div class="nav-item" onclick="showCart()">
+    <span class="nav-icon">🛒</span>
+    <span class="nav-label">طلباتي</span>
+  </div>
+  <div class="nav-item">
+    <span class="nav-icon">❤️</span>
+    <span class="nav-label">المفضلة</span>
+  </div>
+  <div class="nav-item">
+    <span class="nav-icon">👤</span>
+    <span class="nav-label">حسابي</span>
+  </div>
+</div>
+
+<script>
+const stores = [
+  {
+    id: 1, type: 'restaurant',
+    name: 'مطعم السيناوي',
+    tag: '🍔 مطعم',
+    rating: '4.8', time: 25, delivery: 10,
+    open: true,
+    bg: 'linear-gradient(135deg, #FF6B2B 0%, #FF9A5C 100%)',
+    emoji: '🍔',
+    categories: [
+      {
+        name: 'الوجبات الرئيسية',
+        items: [
+          { name: 'كشري سيناوي', desc: 'كشري بالصلصة الحارة والبصل المقلي', price: 25, emoji: '🍛' },
+          { name: 'فراخ مشوية', desc: 'نص فرخة مشوية مع أرز وسلطة', price: 65, emoji: '🍗' },
+          { name: 'كباب لحمة', desc: '6 قطع كباب مشوي مع خبز وصلصة', price: 80, emoji: '🥩' },
+        ]
+      },
+      {
+        name: 'وجبات بحرية',
+        items: [
+          { name: 'سمك مشوي', desc: 'سمك طازج من بحر العريش مشوي على الفحم', price: 95, emoji: '🐟' },
+          { name: 'جمبري مقلي', desc: 'جمبري طازج مقلي مع صلصة الثوم', price: 110, emoji: '🦐' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 2, type: 'market',
+    name: 'ماركت النور',
+    tag: '🛒 سوبرماركت',
+    rating: '4.6', time: 20, delivery: 5,
+    open: true,
+    bg: 'linear-gradient(135deg, #2ECC71 0%, #27ae60 100%)',
+    emoji: '🛒',
+    categories: [
+      {
+        name: 'خضار وفاكهة',
+        items: [
+          { name: 'طماطم (كيلو)', desc: 'طماطم طازجة', price: 8, emoji: '🍅' },
+          { name: 'موز (كيلو)', desc: 'موز طازج محلي', price: 15, emoji: '🍌' },
+          { name: 'بطاطس (كيلو)', desc: 'بطاطس بلدي', price: 10, emoji: '🥔' },
+        ]
+      },
+      {
+        name: 'مشتريات أساسية',
+        items: [
+          { name: 'عيش بلدي (كيس)', desc: '10 أرغفة طازجة', price: 5, emoji: '🍞' },
+          { name: 'زيت نخيل (لتر)', desc: 'زيت نخيل مصفى', price: 35, emoji: '🫙' },
+          { name: 'سكر (كيلو)', desc: 'سكر أبيض', price: 18, emoji: '🍚' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 3, type: 'pharmacy',
+    name: 'صيدلية الشفاء',
+    tag: '💊 صيدلية',
+    rating: '4.9', time: 15, delivery: 5,
+    open: true,
+    bg: 'linear-gradient(135deg, #3498DB 0%, #2980B9 100%)',
+    emoji: '💊',
+    categories: [
+      {
+        name: 'أدوية شائعة',
+        items: [
+          { name: 'بروفين 400', desc: 'مسكن آلام — 20 قرص', price: 18, emoji: '💊' },
+          { name: 'باراسيتامول', desc: 'خافض حرارة ومسكن — 24 قرص', price: 8, emoji: '🩺' },
+          { name: 'فيتامين C', desc: 'أقراص فيتامين سي 1000 ملج', price: 35, emoji: '🍋' },
+        ]
+      },
+      {
+        name: 'مستلزمات طبية',
+        items: [
+          { name: 'كمامات (علبة 50)', desc: 'كمامات طبية عالية الجودة', price: 30, emoji: '😷' },
+          { name: 'مطهر جروح', desc: 'بيتادين 120 مل', price: 22, emoji: '🩹' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 4, type: 'juice',
+    name: 'عصائر سيناء',
+    tag: '🥤 عصائر',
+    rating: '4.7', time: 15, delivery: 8,
+    open: true,
+    bg: 'linear-gradient(135deg, #F39C12 0%, #E67E22 100%)',
+    emoji: '🥤',
+    categories: [
+      {
+        name: 'عصائر طازجة',
+        items: [
+          { name: 'عصير مانجو', desc: 'مانجو طازج 100% بدون سكر', price: 20, emoji: '🥭' },
+          { name: 'عصير قصب', desc: 'قصب السكر الطازج مع ليمون', price: 15, emoji: '🌿' },
+          { name: 'كوكتيل فواكه', desc: 'مزيج الموز والفراولة والمانجو', price: 28, emoji: '🍓' },
+        ]
+      }
+    ]
+  }
+];
+
+let cart = [];
+let currentStore = null;
+
+function renderStores(filter = 'all') {
+  const grid = document.getElementById('stores-grid');
+  const filtered = filter === 'all' ? stores : stores.filter(s => s.type === filter);
+  grid.innerHTML = filtered.map((s, i) => `
+    <div class="store-card" style="animation-delay:${i*0.08}s" onclick="openStore(${s.id})">
+      <div class="store-banner" style="background:${s.bg}">
+        <div style="position:absolute;bottom:10px;right:16px;font-size:60px;opacity:0.3">${s.emoji}</div>
+        <div class="store-badge ${s.open ? 'open' : 'closed'}">${s.open ? '🟢 مفتوح' : '🔴 مغلق'}</div>
+      </div>
+      <div class="store-info">
+        <div class="store-name">${s.name}</div>
+        <div class="store-meta">
+          <span>⭐ ${s.rating}</span>
+          <span>🕐 ${s.time} دقيقة</span>
+          <span>💰 ${s.delivery} جنيه توصيل</span>
+        </div>
+        <span class="store-tag">${s.tag}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterCat(type, el) {
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderStores(type);
+}
+
+function openStore(id) {
+  currentStore = stores.find(s => s.id === id);
+  document.getElementById('store-cover').style.background = currentStore.bg;
+  document.getElementById('store-cover').innerHTML = `<div style="position:absolute;bottom:10px;right:20px;font-size:80px;opacity:0.25">${currentStore.emoji}</div>`;
+  document.getElementById('store-cover').style.position = 'relative';
+  document.getElementById('store-name').textContent = currentStore.name;
+  document.getElementById('store-rating').textContent = currentStore.rating;
+  document.getElementById('store-time').textContent = currentStore.time;
+  document.getElementById('store-delivery').textContent = currentStore.delivery;
+
+  const container = document.getElementById('menu-container');
+  container.innerHTML = currentStore.categories.map(cat => `
+    <div class="menu-section">
+      <div class="menu-section-title">${cat.name}</div>
+      <div class="menu-items">
+        ${cat.items.map(item => `
+          <div class="menu-item">
+            <div class="item-img">${item.emoji}</div>
+            <div class="item-details">
+              <div class="item-name">${item.name}</div>
+              <div class="item-desc">${item.desc}</div>
+              <div class="item-price">${item.price} جنيه</div>
+            </div>
+            <button class="add-btn" onclick="addToCart('${item.name}', ${item.price}, '${item.emoji}', this)">+</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  showScreen('store');
+}
+
+function addToCart(name, price, emoji, btn) {
+  const existing = cart.find(i => i.name === name);
+  if (existing) {
+    existing.qty++;
+  } else {
+    cart.push({ name, price, emoji, qty: 1 });
+  }
+  btn.classList.add('added');
+  btn.textContent = '✓';
+  setTimeout(() => { btn.classList.remove('added'); btn.textContent = '+'; }, 1000);
+  updateCartBar();
+}
+
+function updateCartBar() {
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const count = cart.reduce((s, i) => s + i.qty, 0);
+  document.getElementById('cart-count').textContent = count;
+  document.getElementById('cart-bar-total').textContent = total + ' جنيه';
+  const bar = document.getElementById('cart-bar');
+  if (count > 0) bar.classList.add('visible');
+  else bar.classList.remove('visible');
+}
+
+function showCart() {
+  const list = document.getElementById('cart-items-list');
+  if (cart.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">🛒<br><br>السلة فاضية!</div>';
+  } else {
+    list.innerHTML = cart.map((item, idx) => `
+      <div class="cart-item">
+        <div class="cart-item-emoji">${item.emoji}</div>
+        <div class="cart-item-info">
+          <h4>${item.name}</h4>
+          <p>${item.price * item.qty} جنيه</p>
+        </div>
+        <div class="qty-control">
+          <button class="qty-btn" onclick="changeQty(${idx}, -1)">−</button>
+          <span style="font-weight:800;min-width:16px;text-align:center">${item.qty}</span>
+          <button class="qty-btn plus" onclick="changeQty(${idx}, 1)">+</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const delivery = currentStore ? currentStore.delivery : 10;
+  document.getElementById('cart-summary').innerHTML = `
+    <div class="summary-row"><span>المجموع</span><span>${subtotal} جنيه</span></div>
+    <div class="summary-row"><span>رسوم التوصيل</span><span>${delivery} جنيه</span></div>
+    <div class="summary-row total"><span>الإجمالي</span><span>${subtotal + delivery} جنيه</span></div>
+  `;
+
+  showScreen('cart-screen');
+}
+
+function changeQty(idx, delta) {
+  cart[idx].qty += delta;
+  if (cart[idx].qty <= 0) cart.splice(idx, 1);
+  updateCartBar();
+  showCart();
+}
+
+function placeOrder() {
+  if (cart.length === 0) return;
+  const items = cart.map(i => `${i.name} ×${i.qty} = ${i.price * i.qty} جنيه`).join('\n');
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0) + (currentStore ? currentStore.delivery : 10);
+  const msg = `🛵 *طلب جديد من جيبلي*\n\n${items}\n\n💰 الإجمالي: ${total} جنيه`;
+  window.open(`https://wa.me/201000000000?text=${encodeURIComponent(msg)}`, '_blank');
+  showScreen('success');
+  document.getElementById('cart-bar').classList.remove('visible');
+}
+
+function showHome() {
+  showScreen('home');
+  renderStores();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function resetApp() {
+  cart = [];
+  currentStore = null;
+  updateCartBar();
+  showScreen('home');
+  renderStores();
+}
+
+// Init
+renderStores();
+</script>
+</body>
+</html>
