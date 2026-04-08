@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>جيبلي — لوحة التحكم</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --primary: #16A34A;
+  --primary-dark: #15803D;
+  --primary-light: #DCFCE7;
+  --secondary: #22C55E;
+  --accent: #F59E0B;
+  --accent-light: #FEF3C7;
+  --danger: #EF4444;
+  --danger-light: #FEE2E2;
+  --info: #3B82F6;
+  --info-light: #DBEAFE;
+  --purple: #8B5CF6;
+  --purple-light: #EDE9FE;
+  --bg: #0F172A;
+  --bg2: #1E293B;
+  --bg3: #334155;
+  --surface: #1E293B;
+  --surface2: #263548;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --fg: #F1F5F9;
+  --fg-muted: #94A3B8;
+  --fg-subtle: #475569;
+  --radius: 14px;
+  --radius-sm: 9px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.4);
+  --glow: 0 0 20px rgba(22,163,74,0.25);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Cairo', sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.6;
+  display: flex;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 99px; }
+
+/* ══════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════ */
+.sidebar {
+  width: 240px; min-width: 240px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  position: fixed; top: 0; right: 0;
+  height: 100vh; z-index: 50;
+  padding: 24px 16px;
+  overflow-y: auto;
+}
+.sidebar-logo {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 8px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.sidebar-logo-icon { font-size: 28px; }
+.sidebar-logo-text { font-size: 20px; font-weight: 900; color: var(--primary); }
+.sidebar-logo-sub { font-size: 11px; color: var(--fg-muted); font-weight: 600; }
+
+.nav-group { margin-bottom: 8px; }
+.nav-group-title {
+  font-size: 10px; font-weight: 800;
+  color: var(--fg-subtle); text-transform: uppercase;
+  letter-spacing: 0.8px; padding: 0 10px;
+  margin-bottom: 6px; margin-top: 16px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  cursor: pointer; transition: all 0.15s;
+  color: var(--fg-muted); font-size: 13px; font-weight: 600;
+  border: none; background: transparent;
+  width: 100%; text-align: right;
+  font-family: 'Cairo', sans-serif;
+}
+.nav-item:hover { background: var(--bg3); color: var(--fg); }
+.nav-item.active { background: rgba(22,163,74,0.15); color: var(--primary); }
+.nav-item .ni-icon { font-size: 17px; width: 22px; text-align: center; }
+.nav-badge {
+  margin-right: auto;
+  background: var(--danger); color: #fff;
+  border-radius: 99px; padding: 1px 7px;
+  font-size: 11px; font-weight: 800;
+  min-width: 20px; text-align: center;
+}
+.nav-badge.green { background: var(--primary); }
+
+.sidebar-footer {
+  margin-top: auto; padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.status-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px;
+  background: rgba(22,163,74,0.1);
+  border: 1px solid rgba(22,163,74,0.2);
+  border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 700; color: var(--primary);
+}
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--primary);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* ══════════════════════════════════════
+   MAIN
+══════════════════════════════════════ */
+.main {
+  flex: 1;
+  margin-right: 240px;
+  display: flex; flex-direction: column;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px; height: 60px;
+  display: flex; align-items: center; gap: 16px;
+  position: sticky; top: 0; z-index: 40;
+}
+.topbar-title { font-size: 16px; font-weight: 800; flex: 1; }
+.topbar-time { font-size: 12px; color: var(--fg-muted); font-weight: 600; }
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+.icon-btn {
+  width: 36px; height: 36px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: var(--radius-sm); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; transition: all 0.15s; color: var(--fg-muted);
+  position: relative;
+}
+.icon-btn:hover { background: var(--bg2); color: var(--fg); }
+.notif-dot {
+  position: absolute; top: 5px; left: 5px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--danger);
+  border: 1.5px solid var(--surface);
+}
+
+/* ── PAGE CONTENT ── */
+.page { display: none; padding: 24px 28px; flex: 1; }
+.page.active { display: block; }
+
+/* ══════════════════════════════════════
+   SETUP BANNER
+══════════════════════════════════════ */
+.setup-banner {
+  background: linear-gradient(135deg, rgba(22,163,74,0.15), rgba(34,197,94,0.08));
+  border: 1.5px solid rgba(22,163,74,0.3);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  display: flex; align-items: flex-start; gap: 16px;
+}
+.setup-banner.hidden { display: none; }
+.setup-icon { font-size: 28px; flex-shrink: 0; margin-top: 2px; }
+.setup-content { flex: 1; }
+.setup-title { font-size: 15px; font-weight: 800; color: var(--primary); margin-bottom: 6px; }
+.setup-steps { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.setup-step {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: rgba(0,0,0,0.2); border-radius: var(--radius-sm);
+  padding: 10px 14px; font-size: 13px;
+}
+.step-num {
+  width: 22px; height: 22px; min-width: 22px;
+  background: var(--primary); color: #fff;
+  border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 11px; font-weight: 900;
+}
+.step-text { flex: 1; color: var(--fg-muted); line-height: 1.55; }
+.step-text strong { color: var(--fg); }
+.step-text code {
+  background: rgba(255,255,255,0.08);
+  padding: 1px 7px; border-radius: 4px;
+  font-family: monospace; font-size: 12px;
+  color: #86EFAC; direction: ltr; display: inline-block;
+}
+.input-row { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.config-input {
+  flex: 1; min-width: 200px; height: 40px;
+  background: rgba(0,0,0,0.3); border: 1.5px solid var(--border2);
+  border-radius: var(--radius-sm); padding: 0 14px;
+  font-family: 'Cairo', sans-serif; font-size: 13px;
+  color: var(--fg); outline: none; direction: ltr;
+  transition: all 0.18s;
+}
+.config-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
+.config-input::placeholder { color: var(--fg-subtle); }
+.connect-btn {
+  height: 40px; padding: 0 20px;
+  background: var(--primary); color: #fff; border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 800;
+  cursor: pointer; transition: all 0.18s; white-space: nowrap;
+}
+.connect-btn:hover { background: var(--primary-dark); }
+.demo-btn {
+  height: 40px; padding: 0 18px;
+  background: var(--bg3); color: var(--fg-muted);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: all 0.18s; white-space: nowrap;
+}
+.demo-btn:hover { color: var(--fg); }
+
+/* ══════════════════════════════════════
+   KPI CARDS
+══════════════════════════════════════ */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px; margin-bottom: 24px;
+}
+.kpi-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  position: relative; overflow: hidden;
+  transition: all 0.2s;
+}
+.kpi-card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--shadow); }
+.kpi-card::before {
+  content: '';
+  position: absolute; top: 0; right: 0;
+  width: 3px; height: 100%;
+}
+.kpi-card.green::before { background: var(--primary); }
+.kpi-card.yellow::before { background: var(--accent); }
+.kpi-card.blue::before { background: var(--info); }
+.kpi-card.purple::before { background: var(--purple); }
+.kpi-label { font-size: 12px; color: var(--fg-muted); font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.kpi-value { font-size: 26px; font-weight: 900; line-height: 1.1; margin-bottom: 6px; }
+.kpi-card.green .kpi-value { color: var(--primary); }
+.kpi-card.yellow .kpi-value { color: var(--accent); }
+.kpi-card.blue .kpi-value { color: var(--info); }
+.kpi-card.purple .kpi-value { color: var(--purple); }
+.kpi-change { font-size: 11px; color: var(--fg-subtle); font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.kpi-change.up { color: var(--primary); }
+.kpi-change.down { color: var(--danger); }
+.kpi-icon { position: absolute; top: 14px; left: 16px; font-size: 28px; opacity: 0.15; }
+
+/* ══════════════════════════════════════
+   ORDERS SECTION
+══════════════════════════════════════ */
+.section-row {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-title { font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.card-body { padding: 0; }
+
+/* ── FILTER TABS ── */
+.filter-tabs {
+  display: flex; gap: 4px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.15);
+  overflow-x: auto;
+}
+.filter-tab {
+  padding: 6px 14px; border-radius: 99px;
+  font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+  white-space: nowrap;
+  background: transparent; border: 1px solid var(--border2);
+  color: var(--fg-muted); font-family: 'Cairo', sans-serif;
+}
+.filter-tab:hover { color: var(--fg); border-color: var(--border2); }
+.filter-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.filter-tab.yellow.active { background: var(--accent); border-color: var(--accent); }
+.filter-tab.blue.active { background: var(--info); border-color: var(--info); }
+.filter-tab.purple.active { background: var(--purple); border-color: var(--purple); }
+.filter-tab.red.active { background: var(--danger); border-color: var(--danger); }
+
+/* ── ORDER TABLE ── */
+.orders-list { max-height: 480px; overflow-y: auto; }
+.order-row {
+  display: flex; align-items: center;
+  padding: 14px 18px; gap: 14px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s; cursor: pointer;
+}
+.order-row:last-child { border-bottom: none; }
+.order-row:hover { background: rgba(255,255,255,0.03); }
+.order-row.new-order { animation: flashNew 0.6s ease-out; }
+@keyframes flashNew {
+  0% { background: rgba(22,163,74,0.25); }
+  100% { background: transparent; }
+}
+.order-num { font-size: 13px; font-weight: 800; color: var(--fg); min-width: 60px; }
+.order-customer { flex: 1; }
+.order-customer-name { font-size: 13px; font-weight: 700; }
+.order-customer-resto { font-size: 11px; color: var(--fg-muted); margin-top: 1px; }
+.order-items-preview { font-size: 11px; color: var(--fg-subtle); max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.order-total { font-size: 14px; font-weight: 800; color: var(--primary); min-width: 80px; text-align: center; }
+.order-time { font-size: 11px; color: var(--fg-subtle); min-width: 55px; text-align: center; }
+.status-badge {
+  padding: 4px 10px; border-radius: 99px;
+  font-size: 11px; font-weight: 800;
+  white-space: nowrap; min-width: 80px; text-align: center;
+}
+.status-badge.new { background: rgba(22,163,74,0.15); color: var(--primary); border: 1px solid rgba(22,163,74,0.3); }
+.status-badge.preparing { background: rgba(245,158,11,0.15); color: var(--accent); border: 1px solid rgba(245,158,11,0.3); }
+.status-badge.delivery { background: rgba(59,130,246,0.15); color: var(--info); border: 1px solid rgba(59,130,246,0.3); }
+.status-badge.done { background: rgba(139,92,246,0.15); color: var(--purple); border: 1px solid rgba(139,92,246,0.3); }
+.status-badge.cancelled { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+
+.empty-state {
+  padding: 48px 24px; text-align: center; color: var(--fg-muted);
+}
+.empty-state-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+.empty-state p { font-size: 13px; }
+
+/* ══════════════════════════════════════
+   ORDER DETAIL PANEL
+══════════════════════════════════════ */
+.detail-panel {
+  position: fixed;
+  top: 0; left: 0;
+  width: 380px;
+  height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border2);
+  z-index: 200;
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(.22,.68,0,1.21);
+  display: flex; flex-direction: column;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+.detail-panel.open { transform: translateX(0); }
+.panel-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 199;
+  display: none;
+}
+.panel-overlay.open { display: block; }
+.detail-header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+  position: sticky; top: 0;
+  background: var(--surface); z-index: 2;
+}
+.detail-back {
+  width: 34px; height: 34px;
+  background: var(--bg3); border: none;
+  border-radius: var(--radius-sm); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: var(--fg-muted); transition: all 0.15s;
+}
+.detail-back:hover { color: var(--fg); }
+.detail-title { font-size: 15px; font-weight: 900; flex: 1; }
+.detail-body { padding: 18px 20px; flex: 1; }
+.detail-section { margin-bottom: 20px; }
+.detail-section-title {
+  font-size: 11px; font-weight: 800; color: var(--fg-subtle);
+  text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 10px;
+}
+.detail-info-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 8px; font-size: 13px;
+}
+.detail-info-row span:first-child { color: var(--fg-muted); font-weight: 600; }
+.detail-info-row span:last-child { font-weight: 700; text-align: left; max-width: 200px; }
+.detail-item-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+}
+.detail-item-row:last-child { border-bottom: none; }
+.detail-item-emoji { font-size: 20px; width: 32px; text-align: center; }
+.detail-item-name { flex: 1; font-size: 13px; font-weight: 700; }
+.detail-item-qty { font-size: 12px; color: var(--fg-muted); font-weight: 600; }
+.detail-item-price { font-size: 13px; font-weight: 800; color: var(--primary); }
+.detail-total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 0;
+  font-size: 15px; font-weight: 900;
+}
+.detail-total-row span:last-child { color: var(--primary); font-size: 18px; }
+
+/* Status Actions */
+.status-actions {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 0 20px 20px;
+}
+.status-actions-title {
+  font-size: 12px; font-weight: 800; color: var(--fg-subtle);
+  text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 4px;
+}
+.action-btn {
+  height: 42px; border: none; border-radius: var(--radius-sm);
+  font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 800;
+  cursor: pointer; transition: all 0.18s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.action-btn.preparing-btn { background: rgba(245,158,11,0.15); color: var(--accent); border: 1px solid rgba(245,158,11,0.3); }
+.action-btn.preparing-btn:hover { background: var(--accent); color: #fff; }
+.action-btn.delivery-btn { background: rgba(59,130,246,0.15); color: var(--info); border: 1px solid rgba(59,130,246,0.3); }
+.action-btn.delivery-btn:hover { background: var(--info); color: #fff; }
+.action-btn.done-btn { background: rgba(139,92,246,0.15); color: var(--purple); border: 1px solid rgba(139,92,246,0.3); }
+.action-btn.done-btn:hover { background: var(--purple); color: #fff; }
+.action-btn.cancel-btn { background: rgba(239,68,68,0.08); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+.action-btn.cancel-btn:hover { background: var(--danger); color: #fff; }
+.action-btn.wa-btn { background: rgba(37,211,102,0.12); color: #25D366; border: 1px solid rgba(37,211,102,0.25); }
+.action-btn.wa-btn:hover { background: #25D366; color: #fff; }
+
+/* ══════════════════════════════════════
+   LIVE FEED SIDEBAR
+══════════════════════════════════════ */
+.live-feed { max-height: 500px; overflow-y: auto; }
+.feed-item {
+  display: flex; gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.feed-item.new-item { animation: flashNew 0.8s ease-out; }
+.feed-dot {
+  width: 8px; height: 8px; min-width: 8px;
+  border-radius: 50%; margin-top: 5px;
+}
+.feed-dot.green { background: var(--primary); }
+.feed-dot.yellow { background: var(--accent); }
+.feed-dot.blue { background: var(--info); }
+.feed-dot.purple { background: var(--purple); }
+.feed-dot.red { background: var(--danger); }
+.feed-content { flex: 1; }
+.feed-text { font-size: 12px; font-weight: 700; line-height: 1.4; }
+.feed-time { font-size: 10px; color: var(--fg-subtle); margin-top: 2px; font-weight: 600; }
+
+/* ══════════════════════════════════════
+   STATS PAGE
+══════════════════════════════════════ */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.chart-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; overflow: hidden;
+}
+.chart-card.full { grid-column: 1/-1; }
+.chart-title { font-size: 14px; font-weight: 800; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 140px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.bar {
+  width: 100%; border-radius: 6px 6px 0 0;
+  background: rgba(22,163,74,0.5);
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.bar:hover { background: var(--primary); }
+.bar-label { font-size: 10px; color: var(--fg-subtle); font-weight: 600; }
+.bar-val { font-size: 10px; font-weight: 800; color: var(--fg-muted); }
+
+.top-list { display: flex; flex-direction: column; gap: 10px; }
+.top-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.2); border-radius: var(--radius-sm);
+}
+.top-rank {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--bg3); color: var(--fg-muted);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 900; flex-shrink: 0;
+}
+.top-rank.gold { background: rgba(245,158,11,0.2); color: var(--accent); }
+.top-rank.silver { background: rgba(148,163,184,0.15); color: #94A3B8; }
+.top-rank.bronze { background: rgba(180,120,80,0.15); color: #CD7F32; }
+.top-name { flex: 1; font-size: 13px; font-weight: 700; }
+.top-val { font-size: 13px; font-weight: 800; color: var(--primary); }
+.progress-bar {
+  height: 4px; background: var(--bg3);
+  border-radius: 99px; margin-top: 4px; overflow: hidden;
+}
+.progress-fill { height: 100%; background: var(--primary); border-radius: 99px; transition: width 1s; }
+
+/* ══════════════════════════════════════
+   SETTINGS PAGE
+══════════════════════════════════════ */
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.setting-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+}
+.setting-card.full { grid-column: 1/-1; }
+.setting-title { font-size: 14px; font-weight: 800; margin-bottom: 16px; }
+.setting-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-size: 13px; font-weight: 600; }
+.setting-sub { font-size: 11px; color: var(--fg-muted); margin-top: 1px; }
+.toggle {
+  width: 40px; height: 22px;
+  background: var(--bg3); border-radius: 99px;
+  cursor: pointer; transition: all 0.2s; position: relative;
+  flex-shrink: 0; border: none;
+}
+.toggle.on { background: var(--primary); }
+.toggle::after {
+  content: '';
+  position: absolute; top: 2px; right: 2px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; transition: all 0.2s;
+}
+.toggle.on::after { right: auto; left: 2px; }
+
+/* ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ */
+#toast {
+  position: fixed; bottom: 24px; left: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  color: var(--fg); padding: 12px 18px;
+  border-radius: var(--radius-sm); font-size: 13px; font-weight: 700;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(80px); opacity: 0;
+  transition: all 0.3s cubic-bezier(.22,.68,0,1.21);
+  z-index: 999; display: flex; align-items: center; gap: 8px;
+}
+#toast.show { transform: translateY(0); opacity: 1; }
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════ */
+@media (max-width: 1100px) {
+  .kpi-grid { grid-template-columns: repeat(2,1fr); }
+  .section-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════ -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">🛵</div>
+    <div>
+      <div class="sidebar-logo-text">جيبلي</div>
+      <div class="sidebar-logo-sub">لوحة التحكم</div>
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">الرئيسية</div>
+    <button class="nav-item active" onclick="showPage('page-orders', this)">
+      <span class="ni-icon">📋</span> الطلبات
+      <span class="nav-badge" id="new-orders-badge">0</span>
+    </button>
+    <button class="nav-item" onclick="showPage('page-stats', this)">
+      <span class="ni-icon">📊</span> الإحصائيات
+    </button>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">إدارة</div>
+    <button class="nav-item" onclick="showPage('page-restaurants', this)">
+      <span class="ni-icon">🏪</span> المطاعم
+    </button>
+    <button class="nav-item" onclick="showPage('page-settings', this)">
+      <span class="ni-icon">⚙️</span> الإعدادات
+    </button>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="status-pill">
+      <div class="status-dot"></div>
+      <div>
+        <div style="font-size:12px;font-weight:800">متصل</div>
+        <div style="font-size:10px;color:var(--fg-muted);font-weight:600" id="connection-status">وضع Demo</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MAIN
+══════════════════════════════════════ -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="page-title">📋 الطلبات</div>
+    <div class="topbar-time" id="live-clock"></div>
+    <div class="topbar-actions">
+      <button class="icon-btn" onclick="simulateNewOrder()" title="محاكاة طلب جديد (Demo)">
+        ➕
+        <span class="notif-dot"></span>
+      </button>
+      <button class="icon-btn" title="تحديث">🔄</button>
+    </div>
+  </div>
+
+  <!-- ══ ORDERS PAGE ══ -->
+  <div class="page active" id="page-orders">
+
+    <!-- Setup Banner -->
+    <div class="setup-banner" id="setup-banner">
+      <div class="setup-icon">🔌</div>
+      <div class="setup-content">
+        <div class="setup-title">ربط Supabase — خطوتين بس!</div>
+        <div class="setup-steps">
+          <div class="setup-step">
+            <div class="step-num">1</div>
+            <div class="step-text">
+              روح <strong>supabase.com</strong> → اعمل project جديد → من <strong>SQL Editor</strong> شغّل الـ SQL ده:
+              <br><br>
+              <code>create table orders (id uuid default gen_random_uuid() primary key, order_number text, customer_name text, customer_phone text, customer_address text, restaurant_name text, restaurant_phone text, items jsonb, subtotal numeric, delivery_fee numeric, total numeric, payment_method text, status text default 'new', notes text, created_at timestamptz default now());</code>
+              <br><br>
+              <code>alter table orders enable row level security;</code>
+              <br>
+              <code>create policy "Allow all" on orders for all using (true) with check (true);</code>
+            </div>
+          </div>
+          <div class="setup-step">
+            <div class="step-num">2</div>
+            <div class="step-text">
+              من <strong>Project Settings → API</strong> — انسخ الـ <strong>Project URL</strong> والـ <strong>anon key</strong> وحطهم هنا:
+            </div>
+          </div>
+        </div>
+        <div class="input-row">
+          <input class="config-input" id="sb-url" placeholder="https://xxxx.supabase.co" type="url">
+          <input class="config-input" id="sb-key" placeholder="eyJhbGciOiJIUzI1NiIs...  (anon key)">
+          <button class="connect-btn" onclick="connectSupabase()">🔌 اتصل</button>
+          <button class="demo-btn" onclick="runDemo()">▶ Demo بدون Supabase</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-card green">
+        <div class="kpi-label">💰 إيرادات اليوم</div>
+        <div class="kpi-value" id="kpi-revenue">0 جنيه</div>
+        <div class="kpi-change up" id="kpi-revenue-change">↑ 0 طلب</div>
+        <div class="kpi-icon">💵</div>
+      </div>
+      <div class="kpi-card yellow">
+        <div class="kpi-label">📋 طلبات جديدة</div>
+        <div class="kpi-value" id="kpi-new">0</div>
+        <div class="kpi-change" id="kpi-new-change">في انتظار القبول</div>
+        <div class="kpi-icon">🆕</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-label">🛵 في الطريق</div>
+        <div class="kpi-value" id="kpi-delivery">0</div>
+        <div class="kpi-change" id="kpi-del-change">طلب خارج للتوصيل</div>
+        <div class="kpi-icon">🛵</div>
+      </div>
+      <div class="kpi-card purple">
+        <div class="kpi-label">✅ مكتملة اليوم</div>
+        <div class="kpi-value" id="kpi-done">0</div>
+        <div class="kpi-change up" id="kpi-done-change">↑ مقارنة بالأمس</div>
+        <div class="kpi-icon">✅</div>
+      </div>
+    </div>
+
+    <!-- Orders + Feed -->
+    <div class="section-row">
+      <!-- Orders List -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 قائمة الطلبات <span id="orders-count" style="font-size:11px;font-weight:600;color:var(--fg-muted)"></span></div>
+          <div style="font-size:12px;color:var(--fg-muted);font-weight:600" id="last-update"></div>
+        </div>
+        <div class="filter-tabs">
+          <button class="filter-tab active" onclick="filterOrders('all',this)">الكل</button>
+          <button class="filter-tab yellow" onclick="filterOrders('new',this)">🆕 جديد</button>
+          <button class="filter-tab" onclick="filterOrders('preparing',this)">👨‍🍳 بيتجهز</button>
+          <button class="filter-tab blue" onclick="filterOrders('delivery',this)">🛵 في الطريق</button>
+          <button class="filter-tab purple" onclick="filterOrders('done',this)">✅ مكتمل</button>
+          <button class="filter-tab red" onclick="filterOrders('cancelled',this)">❌ ملغي</button>
+        </div>
+        <div class="orders-list" id="orders-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">📭</div>
+            <p>لا يوجد طلبات بعد<br>اضغط Demo أو اربط Supabase</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Feed -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">⚡ التحديثات المباشرة</div>
+          <div class="status-dot" style="width:8px;height:8px;border-radius:50%;background:var(--primary);animation:pulse 1.5s infinite"></div>
+        </div>
+        <div class="live-feed" id="live-feed">
+          <div class="empty-state" style="padding:32px 16px">
+            <div class="empty-state-icon" style="font-size:28px">📡</div>
+            <p style="font-size:12px">في انتظار الطلبات...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ STATS PAGE ══ -->
+  <div class="page" id="page-stats">
+    <div class="kpi-grid" style="margin-bottom:20px">
+      <div class="kpi-card green"><div class="kpi-label">💰 إجمالي الشهر</div><div class="kpi-value" id="s-monthly">0 جنيه</div><div class="kpi-change up">↑ 23% عن الشهر اللي فات</div><div class="kpi-icon">💵</div></div>
+      <div class="kpi-card yellow"><div class="kpi-label">📦 متوسط الطلب</div><div class="kpi-value" id="s-avg">0 جنيه</div><div class="kpi-change up">↑ قيمة أعلى</div><div class="kpi-icon">📊</div></div>
+      <div class="kpi-card blue"><div class="kpi-label">👥 عملاء فريدة</div><div class="kpi-value" id="s-customers">0</div><div class="kpi-change up">↑ عملاء جدد</div><div class="kpi-icon">👤</div></div>
+      <div class="kpi-card purple"><div class="kpi-label">⏱️ متوسط وقت التوصيل</div><div class="kpi-value">28 د</div><div class="kpi-change up">↓ أسرع من الأسبوع اللي فات</div><div class="kpi-icon">⚡</div></div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="chart-card full">
+        <div class="chart-title">📈 الطلبات - آخر 7 أيام</div>
+        <div class="bar-chart" id="weekly-chart"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🏆 أكثر المطاعم طلباً</div>
+        <div class="top-list" id="top-restaurants"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🍽️ أكثر الأصناف طلباً</div>
+        <div class="top-list" id="top-items"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RESTAURANTS PAGE ══ -->
+  <div class="page" id="page-restaurants">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px" id="resto-cards"></div>
+  </div>
+
+  <!-- ══ SETTINGS PAGE ══ -->
+  <div class="page" id="page-settings">
+    <div class="settings-grid">
+      <div class="setting-card">
+        <div class="setting-title">🔔 الإشعارات</div>
+        <div class="setting-row">
+          <div><div class="setting-label">صوت عند طلب جديد</div><div class="setting-sub">بيبيب لما يجي طلب</div></div>
+          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">إشعار المتصفح</div><div class="setting-sub">نوتيفيكشن Desktop</div></div>
+          <button class="toggle" onclick="this.classList.toggle('on');requestNotifPerm()"></button>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">تحديث تلقائي</div><div class="setting-sub">كل 30 ثانية</div></div>
+          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+        </div>
+      </div>
+      <div class="setting-card">
+        <div class="setting-title">🛵 إعدادات التوصيل</div>
+        <div class="setting-row">
+          <div><div class="setting-label">قبول الطلبات</div><div class="setting-sub">السايت شغال ومقبّل طلبات</div></div>
+          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">توصيل مجاني</div><div class="setting-sub">خليه على كل الطلبات</div></div>
+          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">رسالة واتساب للعميل</div><div class="setting-sub">تأكيد تلقائي بعد الطلب</div></div>
+          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+        </div>
+      </div>
+      <div class="setting-card full">
+        <div class="setting-title">🔌 إعدادات Supabase</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <input class="config-input" id="sb-url-2" placeholder="Project URL" style="flex:2;min-width:200px">
+          <input class="config-input" id="sb-key-2" placeholder="anon key" style="flex:3;min-width:200px">
+          <button class="connect-btn" onclick="connectSupabase()">حفظ وتوصيل</button>
+        </div>
+        <div style="margin-top:14px;padding:12px;background:rgba(0,0,0,0.2);border-radius:var(--radius-sm);font-size:12px;color:var(--fg-muted);line-height:1.7">
+          💡 <strong style="color:var(--fg)">إزاي تربط جيبلي بالداشبورد ده؟</strong><br>
+          في ملف <strong style="color:#86EFAC">geebly.html</strong> الرئيسي — زود في أول الـ script:<br>
+          <code style="display:block;margin:8px 0;padding:8px;background:rgba(0,0,0,0.3);border-radius:6px;direction:ltr;font-family:monospace;color:#86EFAC;font-size:11px">
+const SUPABASE_URL = 'https://xxxx.supabase.co';<br>
+const SUPABASE_KEY = 'your-anon-key';<br>
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);<br><br>
+// في confirmOrder() بدل window.open()<br>
+await sb.from('orders').insert([{ ...orderData }]);
+          </code>
+          وبعدين الداشبورد ده هيشوف الطلبات real-time تلقائياً ✅
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ORDER DETAIL PANEL ══ -->
+<div class="panel-overlay" id="panel-overlay" onclick="closePanel()"></div>
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-header">
+    <button class="detail-back" onclick="closePanel()">→</button>
+    <div class="detail-title" id="panel-title">تفاصيل الطلب</div>
+    <div id="panel-status-badge"></div>
+  </div>
+  <div class="detail-body" id="panel-body"></div>
+  <div class="status-actions" id="panel-actions"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let orders = [];
+let currentFilter = 'all';
+let supabaseClient = null;
+let isDemo = false;
+let orderCounter = 1000;
+
+const STATUS_LABELS = {
+  new: { label: 'جديد', cls: 'new' },
+  preparing: { label: 'بيتجهز', cls: 'preparing' },
+  delivery: { label: 'في الطريق', cls: 'delivery' },
+  done: { label: 'مكتمل', cls: 'done' },
+  cancelled: { label: 'ملغي', cls: 'cancelled' }
+};
+
+const PAYMENT_LABELS = { cash: 'كاش عند الاستلام', vodafone: 'فودافون كاش', instapay: 'إنستاباي' };
+
+// ══════════════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  document.getElementById('live-clock').textContent =
+    now.toLocaleDateString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric' })
+    + ' — ' + now.toLocaleTimeString('ar-EG');
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ══════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════
+const PAGE_TITLES = {
+  'page-orders': '📋 الطلبات',
+  'page-stats': '📊 الإحصائيات',
+  'page-restaurants': '🏪 المطاعم',
+  'page-settings': '⚙️ الإعدادات',
+};
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('page-title').textContent = PAGE_TITLES[id] || '';
+  if (id === 'page-stats') renderStats();
+  if (id === 'page-restaurants') renderRestoCards();
+}
+
+// ══════════════════════════════════════════════
+// SUPABASE CONNECTION
+// ══════════════════════════════════════════════
+async function connectSupabase() {
+  const url = (document.getElementById('sb-url')?.value || document.getElementById('sb-url-2')?.value || '').trim();
+  const key = (document.getElementById('sb-key')?.value || document.getElementById('sb-key-2')?.value || '').trim();
+  if (!url || !key) { showToast('⚠️ ادخل الـ URL والـ Key'); return; }
+
+  try {
+    supabaseClient = supabase.createClient(url, key);
+    // Test connection
+    const { error } = await supabaseClient.from('orders').select('id').limit(1);
+    if (error) throw error;
+
+    document.getElementById('connection-status').textContent = 'Supabase متصل ✅';
+    document.getElementById('setup-banner').classList.add('hidden');
+    isDemo = false;
+
+    await loadOrders();
+    subscribeRealtime();
+    showToast('✅ تم الاتصال بـ Supabase!');
+  } catch(e) {
+    showToast('❌ فشل الاتصال: ' + e.message);
+  }
+}
+
+async function loadOrders() {
+  if (!supabaseClient) return;
+  const { data, error } = await supabaseClient
+    .from('orders')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (error) { showToast('خطأ في جلب الطلبات'); return; }
+  orders = data || [];
+  renderOrders();
+  updateKPIs();
+  updateLastUpdate();
+}
+
+function subscribeRealtime() {
+  if (!supabaseClient) return;
+  supabaseClient
+    .channel('orders-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
+      if (payload.eventType === 'INSERT') {
+        orders.unshift(payload.new);
+        addFeedItem(payload.new, 'طلب جديد وصل!', 'green');
+        playNotifSound();
+        sendBrowserNotif(`طلب جديد من ${payload.new.customer_name}`);
+      } else if (payload.eventType === 'UPDATE') {
+        const idx = orders.findIndex(o => o.id === payload.new.id);
+        if (idx >= 0) orders[idx] = payload.new;
+        addFeedItem(payload.new, `تم تغيير حالة الطلب إلى: ${STATUS_LABELS[payload.new.status]?.label}`, 'blue');
+      }
+      renderOrders();
+      updateKPIs();
+    })
+    .subscribe();
+}
+
+async function updateOrderStatus(id, status) {
+  if (isDemo) {
+    const idx = orders.findIndex(o => o.id === id);
+    if (idx >= 0) {
+      orders[idx].status = status;
+      addFeedItem(orders[idx], `تم تغيير الطلب #${orders[idx].order_number} إلى: ${STATUS_LABELS[status]?.label}`, status === 'done' ? 'purple' : status === 'cancelled' ? 'red' : 'blue');
+      renderOrders();
+      updateKPIs();
+      openOrderDetail(orders[idx].id);
+    }
+    showToast(`✅ تم تغيير الحالة إلى: ${STATUS_LABELS[status]?.label}`);
+    return;
+  }
+  if (!supabaseClient) return;
+  const { error } = await supabaseClient.from('orders').update({ status }).eq('id', id);
+  if (error) showToast('❌ فشل التحديث');
+  else { await loadOrders(); showToast(`✅ تم التحديث`); openOrderDetail(id); }
+}
+
+// ══════════════════════════════════════════════
+// DEMO MODE
+// ══════════════════════════════════════════════
+const DEMO_CUSTOMERS = ['أحمد السيد','محمد علي','فاطمة حسن','سارة محمود','عمر خالد','ندى إبراهيم','كريم عادل','رنا مصطفى'];
+const DEMO_RESTOS = ['كافيه ديلي','مطعم المرسى','شاورما الشام','بيتزا ماستر','الديك الذهبي','كافيه الزاوية'];
+const DEMO_PHONES = ['01012345678','01098765432','01123456789','01234567890'];
+const DEMO_AREAS = ['حي الجلاء','المساعيد','الزهور','الشيخ زويد','رفح الجديدة','شارع طارق'];
+const DEMO_ITEMS = [
+  [{name:'كريسبي برجر دبل',price:75,emoji:'🍔',qty:1},{name:'فريز محملة',price:30,emoji:'🍟',qty:1}],
+  [{name:'سمك بلطي مشوي',price:120,emoji:'🐟',qty:2}],
+  [{name:'شاورما ميكس',price:60,emoji:'🌯',qty:2},{name:'بطاطس مقلية',price:20,emoji:'🍟',qty:1}],
+  [{name:'بيتزا دجاج وفطر',price:85,emoji:'🍕',qty:1},{name:'لازانيا لحمة',price:80,emoji:'🫕',qty:1}],
+  [{name:'وجبة بروست ربع فراخة',price:65,emoji:'🍗',qty:2},{name:'ونجز حارة',price:70,emoji:'🔥',qty:1}],
+  [{name:'كافيه لاتيه',price:45,emoji:'☕',qty:2},{name:'لوتس تشيز كيك',price:55,emoji:'🍰',qty:2}],
+  [{name:'عصير ليمون بالنعناع',price:20,emoji:'🍋',qty:3},{name:'سموذي الطاقة',price:40,emoji:'💪',qty:1}],
+  [{name:'كنافة بالجبن',price:35,emoji:'🍯',qty:3},{name:'أم علي',price:40,emoji:'🍮',qty:2}],
+];
+const DEMO_PAYMENTS = ['cash','vodafone','instapay'];
+const DEMO_STATUSES = ['new','new','new','preparing','delivery','done'];
+
+function runDemo() {
+  isDemo = true;
+  document.getElementById('connection-status').textContent = 'وضع Demo نشط';
+  document.getElementById('setup-banner').classList.add('hidden');
+  orders = [];
+  // Generate initial demo orders
+  const statuses = ['done','done','done','preparing','delivery','new','new','new'];
+  statuses.forEach((status, i) => {
+    const items = DEMO_ITEMS[i % DEMO_ITEMS.length];
+    const subtotal = items.reduce((s,it)=>s+it.price*it.qty,0);
+    const o = {
+      id: 'demo-' + (i+1),
+      order_number: '#' + (1001+i),
+      customer_name: DEMO_CUSTOMERS[i % DEMO_CUSTOMERS.length],
+      customer_phone: DEMO_PHONES[i % DEMO_PHONES.length],
+      customer_address: DEMO_AREAS[i % DEMO_AREAS.length],
+      restaurant_name: DEMO_RESTOS[i % DEMO_RESTOS.length],
+      restaurant_phone: '201000000001',
+      items: JSON.stringify(items),
+      subtotal, delivery_fee: 0, total: subtotal,
+      payment_method: DEMO_PAYMENTS[i%3],
+      status,
+      notes: i === 2 ? 'من غير بصل لو سمحت' : '',
+      created_at: new Date(Date.now() - (7-i)*8*60000).toISOString()
+    };
+    orders.push(o);
+  });
+  orderCounter = 1009;
+  renderOrders();
+  updateKPIs();
+  updateLastUpdate();
+  addFeedItem(orders[5], 'طلب جديد وصل!', 'green');
+  addFeedItem(orders[4], 'طلب خرج للتوصيل', 'blue');
+  addFeedItem(orders[3], 'المطعم بيجهز الطلب', 'yellow');
+  showToast('▶ وضع Demo نشط — اضغط ➕ لإضافة طلب جديد');
+}
+
+function simulateNewOrder() {
+  if (!isDemo) { showToast('⚠️ شغّل Demo الأول'); return; }
+  orderCounter++;
+  const items = DEMO_ITEMS[Math.floor(Math.random() * DEMO_ITEMS.length)];
+  const subtotal = items.reduce((s,it)=>s+it.price*it.qty,0);
+  const o = {
+    id: 'demo-' + Date.now(),
+    order_number: '#' + orderCounter,
+    customer_name: DEMO_CUSTOMERS[Math.floor(Math.random()*DEMO_CUSTOMERS.length)],
+    customer_phone: DEMO_PHONES[Math.floor(Math.random()*DEMO_PHONES.length)],
+    customer_address: DEMO_AREAS[Math.floor(Math.random()*DEMO_AREAS.length)],
+    restaurant_name: DEMO_RESTOS[Math.floor(Math.random()*DEMO_RESTOS.length)],
+    restaurant_phone: '201000000001',
+    items: JSON.stringify(items),
+    subtotal, delivery_fee: 0, total: subtotal,
+    payment_method: DEMO_PAYMENTS[Math.floor(Math.random()*3)],
+    status: 'new',
+    notes: '',
+    created_at: new Date().toISOString()
+  };
+  orders.unshift(o);
+  renderOrders();
+  updateKPIs();
+  updateLastUpdate();
+  addFeedItem(o, `طلب جديد من ${o.customer_name}!`, 'green');
+  playNotifSound();
+  showToast(`🔔 طلب جديد من ${o.customer_name}!`);
+  // Flash badge
+  const badge = document.getElementById('new-orders-badge');
+  badge.classList.add('green');
+  setTimeout(() => badge.classList.remove('green'), 2000);
+}
+
+// ══════════════════════════════════════════════
+// RENDER ORDERS
+// ══════════════════════════════════════════════
+function renderOrders() {
+  const filtered = currentFilter === 'all' ? orders : orders.filter(o => o.status === currentFilter);
+  const list = document.getElementById('orders-list');
+  document.getElementById('orders-count').textContent = `(${filtered.length})`;
+
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div><p>لا يوجد طلبات في هذه الفئة</p></div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(o => {
+    const st = STATUS_LABELS[o.status] || STATUS_LABELS.new;
+    const items = parseItems(o.items);
+    const preview = items.map(i => i.name).join('، ');
+    const timeAgo = getTimeAgo(o.created_at);
+    return `
+      <div class="order-row" onclick="openOrderDetail('${o.id}')">
+        <div class="order-num">${o.order_number}</div>
+        <div class="order-customer">
+          <div class="order-customer-name">${o.customer_name}</div>
+          <div class="order-customer-resto">🏪 ${o.restaurant_name}</div>
+        </div>
+        <div class="order-items-preview">${preview}</div>
+        <div class="order-total">${o.total} جنيه</div>
+        <div class="order-time">${timeAgo}</div>
+        <span class="status-badge ${st.cls}">${st.label}</span>
+      </div>`;
+  }).join('');
+
+  updateNewBadge();
+}
+
+function filterOrders(status, btn) {
+  currentFilter = status;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderOrders();
+}
+
+// ══════════════════════════════════════════════
+// ORDER DETAIL
+// ══════════════════════════════════════════════
+function openOrderDetail(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+
+  const st = STATUS_LABELS[o.status] || STATUS_LABELS.new;
+  const items = parseItems(o.items);
+
+  document.getElementById('panel-title').textContent = `طلب ${o.order_number}`;
+  document.getElementById('panel-status-badge').innerHTML = `<span class="status-badge ${st.cls}">${st.label}</span>`;
+
+  const itemsHtml = items.map(item => `
+    <div class="detail-item-row">
+      <div class="detail-item-emoji">${item.emoji || '🍽️'}</div>
+      <div class="detail-item-name">${item.name}</div>
+      <div class="detail-item-qty">× ${item.qty}</div>
+      <div class="detail-item-price">${item.price * item.qty} جنيه</div>
+    </div>`).join('');
+
+  document.getElementById('panel-body').innerHTML = `
+    <div class="detail-section">
+      <div class="detail-section-title">بيانات العميل</div>
+      <div class="detail-info-row"><span>الاسم</span><span>${o.customer_name}</span></div>
+      <div class="detail-info-row"><span>الموبايل</span><span dir="ltr">${o.customer_phone}</span></div>
+      <div class="detail-info-row"><span>العنوان</span><span>${o.customer_address}</span></div>
+      ${o.notes ? `<div class="detail-info-row"><span>ملاحظات</span><span style="color:var(--accent)">${o.notes}</span></div>` : ''}
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">المطعم</div>
+      <div class="detail-info-row"><span>الاسم</span><span>${o.restaurant_name}</span></div>
+      <div class="detail-info-row"><span>الدفع</span><span>${PAYMENT_LABELS[o.payment_method] || o.payment_method}</span></div>
+      <div class="detail-info-row"><span>وقت الطلب</span><span>${new Date(o.created_at).toLocaleTimeString('ar-EG')}</span></div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">الأصناف</div>
+      ${itemsHtml}
+      <div class="cart-divider" style="height:1px;background:var(--border);margin:10px 0"></div>
+      <div class="detail-total-row">
+        <span>الإجمالي</span>
+        <span>${o.total} جنيه</span>
+      </div>
+    </div>`;
+
+  // Action buttons based on status
+  const actions = document.getElementById('panel-actions');
+  let btns = `<div class="status-actions-title">تغيير الحالة</div>`;
+  if (o.status === 'new') {
+    btns += `<button class="action-btn preparing-btn" onclick="updateOrderStatus('${o.id}','preparing')">👨‍🍳 قبول — بدأ التجهيز</button>`;
+    btns += `<button class="action-btn cancel-btn" onclick="updateOrderStatus('${o.id}','cancelled')">❌ رفض الطلب</button>`;
+  } else if (o.status === 'preparing') {
+    btns += `<button class="action-btn delivery-btn" onclick="updateOrderStatus('${o.id}','delivery')">🛵 خرج للتوصيل</button>`;
+    btns += `<button class="action-btn cancel-btn" onclick="updateOrderStatus('${o.id}','cancelled')">❌ إلغاء</button>`;
+  } else if (o.status === 'delivery') {
+    btns += `<button class="action-btn done-btn" onclick="updateOrderStatus('${o.id}','done')">✅ تم التسليم</button>`;
+  }
+
+  const waMsg = buildWAMsg(o, items);
+  btns += `<button class="action-btn wa-btn" onclick="window.open('https://wa.me/${o.restaurant_phone || '201000000001'}?text=${waMsg}','_blank')">💬 واتساب المطعم</button>`;
+  btns += `<button class="action-btn wa-btn" onclick="window.open('https://wa.me/2${o.customer_phone.replace(/^0/,'')}?text=${encodeURIComponent('مرحباً ' + o.customer_name + '! طلبك من جيبلي اتوصل ✅')}','_blank')">📱 واتساب العميل</button>`;
+
+  actions.innerHTML = btns;
+
+  document.getElementById('detail-panel').classList.add('open');
+  document.getElementById('panel-overlay').classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('detail-panel').classList.remove('open');
+  document.getElementById('panel-overlay').classList.remove('open');
+}
+
+function buildWAMsg(o, items) {
+  let msg = `🛵 *طلب جديد - جيبلي*\n\n`;
+  msg += `رقم الطلب: ${o.order_number}\n`;
+  msg += `العميل: ${o.customer_name}\n`;
+  msg += `الموبايل: ${o.customer_phone}\n`;
+  msg += `العنوان: ${o.customer_address}\n\n`;
+  msg += `*الأصناف:*\n`;
+  items.forEach(i => msg += `• ${i.name} ×${i.qty} — ${i.price*i.qty} جنيه\n`);
+  msg += `\n*الإجمالي: ${o.total} جنيه*\n`;
+  msg += `الدفع: ${PAYMENT_LABELS[o.payment_method] || o.payment_method}`;
+  return encodeURIComponent(msg);
+}
+
+// ══════════════════════════════════════════════
+// KPIs
+// ══════════════════════════════════════════════
+function updateKPIs() {
+  const today = new Date().toDateString();
+  const todayOrders = orders.filter(o => new Date(o.created_at).toDateString() === today);
+  const revenue = todayOrders.filter(o=>o.status!=='cancelled').reduce((s,o)=>s+Number(o.total),0);
+  const newCount = orders.filter(o=>o.status==='new').length;
+  const delCount = orders.filter(o=>o.status==='delivery').length;
+  const doneCount = todayOrders.filter(o=>o.status==='done').length;
+
+  document.getElementById('kpi-revenue').textContent = revenue.toLocaleString('ar-EG') + ' جنيه';
+  document.getElementById('kpi-revenue-change').textContent = `↑ ${todayOrders.length} طلب اليوم`;
+  document.getElementById('kpi-new').textContent = newCount;
+  document.getElementById('kpi-new-change').textContent = newCount ? `${newCount} طلب في انتظار القبول` : 'لا يوجد طلبات جديدة';
+  document.getElementById('kpi-delivery').textContent = delCount;
+  document.getElementById('kpi-done').textContent = doneCount;
+  updateNewBadge();
+}
+
+function updateNewBadge() {
+  const n = orders.filter(o=>o.status==='new').length;
+  const b = document.getElementById('new-orders-badge');
+  b.textContent = n;
+  b.style.display = n ? 'inline-block' : 'none';
+}
+
+function updateLastUpdate() {
+  document.getElementById('last-update').textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar-EG');
+}
+
+// ══════════════════════════════════════════════
+// LIVE FEED
+// ══════════════════════════════════════════════
+function addFeedItem(order, msg, color) {
+  const feed = document.getElementById('live-feed');
+  if (feed.querySelector('.empty-state')) feed.innerHTML = '';
+  const el = document.createElement('div');
+  el.className = 'feed-item new-item';
+  el.innerHTML = `
+    <div class="feed-dot ${color}"></div>
+    <div class="feed-content">
+      <div class="feed-text">${msg}<br><span style="color:var(--fg-muted);font-weight:600">${order.order_number} — ${order.customer_name} — ${order.total} جنيه</span></div>
+      <div class="feed-time">${new Date().toLocaleTimeString('ar-EG')}</div>
+    </div>`;
+  feed.insertBefore(el, feed.firstChild);
+  if (feed.children.length > 20) feed.lastChild.remove();
+}
+
+// ══════════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════════
+function renderStats() {
+  if (!orders.length) { runDemo(); return; }
+
+  const today = new Date().toDateString();
+  const todayOrders = orders.filter(o => new Date(o.created_at).toDateString() === today && o.status !== 'cancelled');
+  const allValid = orders.filter(o => o.status !== 'cancelled');
+  const monthly = allValid.reduce((s,o)=>s+Number(o.total),0);
+  const avg = allValid.length ? Math.round(monthly / allValid.length) : 0;
+  const customers = new Set(orders.map(o=>o.customer_phone)).size;
+
+  document.getElementById('s-monthly').textContent = monthly.toLocaleString('ar-EG') + ' جنيه';
+  document.getElementById('s-avg').textContent = avg + ' جنيه';
+  document.getElementById('s-customers').textContent = customers;
+
+  // Weekly chart (simulated days)
+  const days = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  const vals = [8,12,7,15,11,18,orders.length];
+  const max = Math.max(...vals);
+  document.getElementById('weekly-chart').innerHTML = vals.map((v,i) => `
+    <div class="bar-col">
+      <div class="bar-val">${v}</div>
+      <div class="bar" style="height:${(v/max)*110}px"></div>
+      <div class="bar-label">${days[i]}</div>
+    </div>`).join('');
+
+  // Top restaurants
+  const restoCounts = {};
+  allValid.forEach(o => { restoCounts[o.restaurant_name] = (restoCounts[o.restaurant_name] || 0) + 1; });
+  const sortedRestos = Object.entries(restoCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxR = sortedRestos[0]?.[1] || 1;
+  const rankClasses = ['gold','silver','bronze','',''];
+  document.getElementById('top-restaurants').innerHTML = sortedRestos.map(([name,count],i) => `
+    <div class="top-item">
+      <div class="top-rank ${rankClasses[i]}">${i+1}</div>
+      <div style="flex:1"><div class="top-name">${name}</div><div class="progress-bar"><div class="progress-fill" style="width:${(count/maxR)*100}%"></div></div></div>
+      <div class="top-val">${count} طلب</div>
+    </div>`).join('');
+
+  // Top items
+  const itemCounts = {};
+  allValid.forEach(o => {
+    parseItems(o.items).forEach(it => { itemCounts[it.name] = (itemCounts[it.name]||0) + it.qty; });
+  });
+  const sortedItems = Object.entries(itemCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxI = sortedItems[0]?.[1] || 1;
+  document.getElementById('top-items').innerHTML = sortedItems.map(([name,count],i) => `
+    <div class="top-item">
+      <div class="top-rank ${rankClasses[i]}">${i+1}</div>
+      <div style="flex:1"><div class="top-name">${name}</div><div class="progress-bar"><div class="progress-fill" style="width:${(count/maxI)*100}%"></div></div></div>
+      <div class="top-val">${count} مرة</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════
+// RESTAURANTS CARDS
+// ══════════════════════════════════════════════
+const restos = ['كافيه ديلي','مطعم المرسى','شاورما الشام','بيتزا ماستر','الديك الذهبي','كافيه الزاوية','عصير الفردوس','حلواني النور'];
+const restoEmojis = ['🍔','🦐','🌯','🍕','🍗','☕','🥤','🍰'];
+function renderRestoCards() {
+  document.getElementById('resto-cards').innerHTML = restos.map((name,i) => {
+    const count = orders.filter(o=>o.restaurant_name===name).length;
+    return `
+      <div class="chart-card" style="cursor:default">
+        <div style="font-size:36px;margin-bottom:10px">${restoEmojis[i]}</div>
+        <div style="font-size:15px;font-weight:800;margin-bottom:4px">${name}</div>
+        <div style="font-size:12px;color:var(--fg-muted);font-weight:600;margin-bottom:12px">${count} طلب</div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;text-align:center;background:rgba(22,163,74,0.1);border-radius:8px;padding:8px">
+            <div style="font-size:18px;font-weight:900;color:var(--primary)">${count}</div>
+            <div style="font-size:10px;color:var(--fg-muted)">طلب</div>
+          </div>
+          <div style="flex:1;text-align:center;background:rgba(245,158,11,0.1);border-radius:8px;padding:8px">
+            <div style="font-size:18px;font-weight:900;color:var(--accent)">${Math.floor(Math.random()*5+3)}</div>
+            <div style="font-size:10px;color:var(--fg-muted)">تقييم</div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════
+function parseItems(items) {
+  try { return typeof items === 'string' ? JSON.parse(items) : items || []; }
+  catch { return []; }
+}
+
+function getTimeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff/60000);
+  if (m < 1) return 'الآن';
+  if (m < 60) return `${m} د`;
+  const h = Math.floor(m/60);
+  if (h < 24) return `${h} س`;
+  return `${Math.floor(h/24)} ي`;
+}
+
+function playNotifSound() {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+  } catch(e) {}
+}
+
+function requestNotifPerm() {
+  if ('Notification' in window) Notification.requestPermission();
+}
+function sendBrowserNotif(msg) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('🛵 جيبلي', { body: msg, icon: '🛵' });
+  }
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+renderRestoCards();
+</script>
+</body>
+</html>
