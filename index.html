@@ -6,6 +6,9 @@
 <title>جيبلي — توصيل العريش</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   :root {
     --primary: #16A34A;
     --primary-dark: #15803D;
@@ -677,6 +680,12 @@
   <div class="modal">
     <div class="modal-title">📍 بيانات التوصيل</div>
     <div class="modal-sub">علشان نوصلك طلبك بسرعة — ادخل عنوانك وبيانات التواصل</div>
+
+    <button onclick="loginWithGoogle()" style="width:100%; padding:12px; margin-bottom:15px; border-radius:12px; border:1px solid #e2e8f0; background:white; display:flex; align-items:center; justify-content:center; gap:10px; cursor:pointer; font-weight:600; font-family:'Cairo';">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="18">
+      دخول سريع بجوجل
+    </button>
+
     <div class="form-row-2">
       <div class="form-group">
         <label>الاسم</label>
@@ -684,9 +693,24 @@
       </div>
       <div class="form-group">
         <label>رقم الموبايل</label>
-        <input type="tel" id="f-phone" placeholder="01xxxxxxxxx">
+        <input type="tel" id="f-phone" placeholder="رقم الموبايل">
       </div>
     </div>
+
+    <div class="form-group" style="margin-top: 15px; position: relative;">
+      <label>العنوان بالتفصيل</label>
+      <input type="text" id="f-address" placeholder="مثلاً: شارع البحر، العريش">
+      <button onclick="getCurrentLocation()" style="position: absolute; left: 10px; bottom: 8px; background: #DCFCE7; border: none; color: #16A34A; padding: 4px 10px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold;">
+        📍 موقعي
+      </button>
+    </div>
+
+    <div class="modal-actions" style="margin-top: 20px;">
+      <button class="btn-secondary" onclick="closeModal()">إلغاء</button>
+      <button class="btn-primary" onclick="confirmOrder()">تأكيد الطلب</button>
+    </div>
+  </div>
+</div>
     <div class="form-group">
       <label>الحي أو الشارع</label>
       <input type="text" id="f-area" placeholder="مثلاً: حي المساعيد، شارع فلسطين...">
@@ -716,6 +740,10 @@
 <div id="toast">تم إضافة الصنف ✓</div>
 
 <script>
+// حط الكود ده في أول سطر داخل الـ <script>
+const SUPABASE_URL = 'https://abigsonscrbqzctapajw.supabase.co'; // جيبه من إعدادات السوبابيز
+const SUPABASE_KEY = 'sb_publishable_o3HYFxq8m2Hml2jlEOUrKA_LK1uJLew'; // جيبه من إعدادات السوبابيز
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // ══════════════════════════════════════════════
 // REAL AL-ARISH RESTAURANTS DATA
 // ══════════════════════════════════════════════
@@ -1157,17 +1185,53 @@ function buildCustomerMsg(name, restoName, total) {
   return encodeURIComponent(msg);
 }
 
-function confirmOrder() {
-  const name = document.getElementById('f-name').value.trim();
-  const phone = document.getElementById('f-phone').value.trim();
-  const area = document.getElementById('f-area').value.trim();
-  const notes = document.getElementById('f-notes').value.trim();
-  const payment = document.getElementById('f-payment').value;
+async function confirmOrder() {
+  const name = document.getElementById('name-input').value.trim();
+  const phone = document.getElementById('phone-input').value.trim();
+  const address = document.getElementById('address-input').value.trim();
 
-  if (!name || !phone || !area) {
-    showToast('⚠️ من فضلك ادخل الاسم والموبايل والعنوان');
+  if (!name || !phone || !address) {
+    showToast('يرجى ملء جميع البيانات');
     return;
   }
+
+  const r = restaurants.find(x => x.id === currentRestaurantId);
+  const total = calculateTotal();
+
+  // 1. إرسال البيانات للسوبابيز (الداشبورد)
+  try {
+    const { data, error } = await _supabase
+      .from('orders') // تأكد إن اسم الجدول في سوبابيز هو orders
+      .insert([
+        {
+          customer_name: name,
+          phone: phone,
+          address: address,
+          restaurant_name: r.name,
+          items: JSON.stringify(cart), // هنحول السلة لنص عشان تتحفظ
+          total_price: total,
+          status: 'pending' // الطلب ينزل كـ "معلق" في الداشبورد
+        }
+      ]);
+
+    if (error) throw error;
+
+    // 2. بعد ما يتسجل في الداشبورد، نفتح الواتساب (اختياري لو لسه عاوزه)
+    // لو مش عايز واتساب خالص، امسح السطرين الجايين دول
+    const merchantMsg = buildMerchantMsg(name, phone, address, r.name, total);
+    window.open(`https://wa.me/${r.phone}?text=${encodeURIComponent(merchantMsg)}`, '_blank');
+
+    // 3. نقفل المودال ونصفر السلة
+    closeModal();
+    cart = [];
+    updateCartUI();
+    showScreen('screen-success');
+
+  } catch (err) {
+    console.error(err);
+    showToast('حدث خطأ أثناء إرسال الطلب للداشبورد');
+  }
+}
 
   const r = currentResto;
   const items = Object.values(cart);
